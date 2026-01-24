@@ -137,3 +137,24 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Storybook
+storybook-static/
+
+# Vitest
+.vitest/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# pnpm
+pnpm-lock.yaml
+
+# Claude settings
+.claude/settings.local.json
