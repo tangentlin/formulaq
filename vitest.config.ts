@@ -29,5 +29,9 @@ export default defineConfig({
         '**/index.ts',
       ],
     },
+    benchmark: {
+      include: ['src/**/*.bench.ts'],
+      exclude: ['node_modules', 'dist'],
+    },
   },
 });

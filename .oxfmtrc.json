@@ -16,6 +16,8 @@
     "node_modules",
     "*.config.ts",
     "*.config.js",
-    ".storybook"
+    ".storybook",
+    "src/editor/codemirror/parser.js",
+    "src/editor/codemirror/parser.terms.js"
   ]
 }

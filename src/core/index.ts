@@ -16,17 +16,75 @@
  * @packageDocumentation
  */
 
-// Types will be exported here as they are implemented
-// export type { Value, ValueType, VariableInfo } from './types/values';
-// export type { ASTNode, ValidatedAST } from './types/ast';
-// export type { FormulaError, SyntaxError, SemanticError } from './types/errors';
-// export type { VariableProvider, EvaluationContext } from './types/context';
-// export type { BatchResult, RuntimeError } from './types/results';
-// export type { FormulaFunction, ParamDef } from './types/functions';
+// Value types
+export type { Value, ValueType, RawValue, VariableInfo } from './types/values.ts';
 
-// Engine will be exported here
-// export { createFormulaEngine } from './engine';
-// export type { FormulaQEngine } from './engine';
+// AST types
+export type {
+  ASTNode,
+  LiteralNode,
+  VariableRefNode,
+  BinaryOpNode,
+  UnaryOpNode,
+  FunctionCallNode,
+  BinaryOperator,
+  UnaryOperator,
+  SourceLocation,
+  ValidatedAST,
+  CachedAggregation,
+} from './types/ast.ts';
 
-// Placeholder export to make the module valid
+// Error types
+export {
+  FormulaError,
+  FormulaSyntaxError,
+  FormulaSemanticError,
+  createDivByZeroError,
+  createDomainError,
+  createOverflowError,
+  createTypeError,
+  createNullError,
+} from './types/errors.ts';
+
+export type {
+  ErrorPosition,
+  SyntaxErrorCode,
+  SemanticErrorCode,
+  RuntimeErrorCode,
+  FormulaRuntimeError,
+} from './types/errors.ts';
+
+// Context types
+export type { VariableProvider, EvaluationContext, EvaluationOptions } from './types/context.ts';
+
+// Result types
+export type { BatchResult, BatchResultStats } from './types/results.ts';
+
+export {
+  createEmptyBatchResult,
+  createBatchResult,
+  computeBatchResultStats,
+} from './types/results.ts';
+
+// Function types
+export type {
+  ParamDef,
+  ParamTypeSpec,
+  FunctionInfo,
+  FormulaFunction,
+  FunctionEvaluator,
+  FunctionRegistry,
+} from './types/functions.ts';
+
+// Engine facade
+export { createFormulaEngine } from './engine.ts';
+export type {
+  FormulaQEngine,
+  EngineOptions,
+  BatchEvaluationOptions,
+  RowContext,
+  RowEvaluationResult,
+} from './engine.ts';
+
+// Version
 export const VERSION = '0.1.0';

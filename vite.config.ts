@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 
+const port = 5173;
 export default defineConfig({
   plugins: [
     react(),
@@ -12,6 +13,10 @@ export default defineConfig({
       rollupTypes: false,
     }),
   ],
+  server: {
+    port,
+    host: true,
+  },
   resolve: {
     alias: {
       'formulaq/core': resolve(__dirname, 'src/core/index.ts'),

@@ -1,0 +1,123 @@
+// FormulaQ Language Grammar for Lezer
+// This grammar provides syntax highlighting for the formula language.
+// It recognizes variable references, function calls, operators, and literals.
+
+@top Formula { expression* }
+
+@skip { space }
+
+expression {
+  BinaryExpression |
+  UnaryExpression |
+  PrimaryExpression
+}
+
+BinaryExpression {
+  expression !compare comparisonOp expression |
+  expression !concat Ampersand expression |
+  expression !add addOp expression |
+  expression !mult multOp expression |
+  expression !power Power expression
+}
+
+UnaryExpression {
+  !unary unaryOp expression
+}
+
+PrimaryExpression {
+  VariableRef |
+  FunctionCall |
+  Number |
+  String |
+  Boolean |
+  ParenExpression
+}
+
+ParenExpression {
+  "(" expression ")"
+}
+
+FunctionCall {
+  FunctionName "(" ArgList? ")"
+}
+
+ArgList {
+  expression ("," expression)*
+}
+
+comparisonOp {
+  CompareOp
+}
+
+addOp {
+  ArithOp<"+" | "-">
+}
+
+multOp {
+  ArithOp<"*" | "/" | "%">
+}
+
+unaryOp {
+  ArithOp<"+" | "-">
+}
+
+@tokens {
+  space { @whitespace+ }
+
+  // Numbers: integers, decimals, scientific notation
+  Number {
+    (@digit+ ("." @digit*)? | "." @digit+) (("e" | "E") ("+" | "-")? @digit+)?
+  }
+
+  // Double-quoted strings with escape sequences
+  String {
+    "\"" (![\\\"\n] | "\\" _)* "\"" |
+    "'" (![\\\'\n] | "\\" _)* "'"
+  }
+
+  // Variable references with @ prefix
+  VariableRef { "@" $[a-zA-Z_] $[a-zA-Z0-9_.]* }
+
+  // Boolean literals (case-insensitive)
+  Boolean {
+    $[Tt] $[Rr] $[Uu] $[Ee] |
+    $[Ff] $[Aa] $[Ll] $[Ss] $[Ee]
+  }
+
+  // Function name - identifier (we distinguish from regular identifiers contextually)
+  // FunctionName appears only before "(" in grammar context
+  FunctionName { $[a-zA-Z] $[a-zA-Z0-9_]* }
+
+  // Comparison operators (ordered by length for matching priority)
+  CompareOp { "<=" | ">=" | "==" | "!=" | "<>" | "<" | ">" }
+
+  // Arithmetic operators - parameterized
+  ArithOp<expr> { expr }
+
+  // Exponentiation
+  Power { "^" }
+
+  // String concatenation
+  Ampersand { "&" }
+
+  // Punctuation
+  "(" ")" ","
+
+  // Precedence declarations for token matching
+  @precedence { Boolean, FunctionName }
+  @precedence { CompareOp }
+}
+
+// Operator precedence (lower number = lower precedence, listed first = lower)
+@precedence {
+  unary @right,
+  power @right,
+  mult @left,
+  add @left,
+  concat @left,
+  compare @left
+}
+
+@external propSource formulaHighlighting from "./highlight"
+
+@detectDelim

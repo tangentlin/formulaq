@@ -25,12 +25,33 @@
  * @packageDocumentation
  */
 
-// Components will be exported here as they are implemented
-// export { FormulaEditor } from './FormulaEditor/FormulaEditor';
-// export type { FormulaEditorProps } from './FormulaEditor/FormulaEditor.types';
+// FormulaEditor component
+export { FormulaEditor } from './formula-editor/formula-editor.tsx';
+export type {
+  FormulaEditorProps,
+  ValidationResult,
+} from './formula-editor/formula-editor.types.ts';
 
-// export { ValidationStatus } from './ValidationStatus/ValidationStatus';
-// export type { ValidationStatusProps } from './ValidationStatus/ValidationStatus.types';
+// ValidationStatus component
+export { ValidationStatus } from './validation-status/validation-status.tsx';
+export type {
+  ValidationStatusProps,
+  ValidationState,
+  ErrorPositionInfo,
+} from './validation-status/validation-status.types.ts';
 
-// Placeholder export to make the module valid
+// CodeMirror extensions (for advanced usage)
+export { formula, formulaLanguage } from './codemirror/formula-language.ts';
+export { formulaHighlighting, formulaHighlightStyle } from './codemirror/highlighting.ts';
+export { formulaAutocomplete } from './codemirror/autocomplete.ts';
+export {
+  errorMarkerExtension,
+  updateErrors,
+  clearErrors,
+  setErrors,
+} from './codemirror/error-marker.ts';
+export type { ErrorPosition } from './codemirror/error-marker.ts';
+export type { AutocompleteConfig } from './codemirror/autocomplete.ts';
+
+// Package version
 export const VERSION = '0.1.0';

@@ -15,15 +15,31 @@
  * @packageDocumentation
  */
 
-// Components will be exported here as they are implemented
-// export { Playground } from './Playground/Playground';
-// export type { PlaygroundProps } from './Playground/Playground.types';
+export { Playground } from './playground/playground';
+export type { PlaygroundProps } from './playground/playground.types';
 
-// export { VariableEditor } from './VariableEditor/VariableEditor';
-// export type { VariableEditorProps } from './VariableEditor/VariableEditor.types';
+export { VariableEditor } from './variable-editor/variable-editor';
+export type { VariableEditorProps, ParseResult } from './variable-editor/variable-editor.types';
 
-// export { ResultsPanel } from './ResultsPanel/ResultsPanel';
-// export type { ResultsPanelProps } from './ResultsPanel/ResultsPanel.types';
+export { VariableCard } from './variable-card/variable-card';
+export type { VariableCardProps, PlaygroundVariable } from './variable-card/variable-card.types';
 
-// Placeholder export to make the module valid
-export const VERSION = '0.1.0';
+export { AggregationDisplay } from './aggregation-display/aggregation-display';
+export type {
+  AggregationDisplayProps,
+  AggregationResult,
+} from './aggregation-display/aggregation-display.types';
+
+export { ResultsPanel } from './results-panel/results-panel';
+export type {
+  ResultsPanelProps,
+  ResultsStatistics,
+  FormattedResult,
+} from './results-panel/results-panel.types';
+
+export { VariablePanel } from './variable-panel/variable-panel';
+export type { VariablePanelProps } from './variable-panel/variable-panel.types';
+
+export { usePlaygroundState } from './hooks/use-playground-state';
+export type { UsePlaygroundStateReturn } from './hooks/use-playground-state';
+export type { PlaygroundState, EvaluationResult } from './hooks/use-playground-state.view-model';
