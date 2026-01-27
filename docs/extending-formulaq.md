@@ -7,16 +7,18 @@ This guide covers how to extend FormulaQ with custom functions, aggregations, an
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Adding Custom Functions](#adding-custom-functions)
+2. [Self-Documenting Functions](#self-documenting-functions)
+3. [Adding Custom Functions](#adding-custom-functions)
    - [Basic Row-Level Functions](#basic-row-level-functions)
    - [Functions with Multiple Parameters](#functions-with-multiple-parameters)
    - [Handling Null Values](#handling-null-values)
-3. [Adding Aggregation Functions](#adding-aggregation-functions)
-4. [Adding Variadic Functions](#adding-variadic-functions)
-5. [Function Categories](#function-categories)
-6. [Testing Custom Functions](#testing-custom-functions)
-7. [Best Practices](#best-practices)
-8. [Type Reference](#type-reference)
+4. [Adding Aggregation Functions](#adding-aggregation-functions)
+5. [Adding Variadic Functions](#adding-variadic-functions)
+6. [Function Categories](#function-categories)
+7. [Testing Custom Functions](#testing-custom-functions)
+8. [Best Practices](#best-practices)
+9. [Maintenance Guidelines](#maintenance-guidelines)
+10. [Type Reference](#type-reference)
 
 ---
 
@@ -33,9 +35,54 @@ FormulaQ's function system is designed for extensibility. Every built-in functio
 ```
 FormulaFunction
 ├── Metadata (name, description, params, returnType)
+├── Examples (usage examples for help system)
 ├── Flags (isAggregation, isVariadic)
 └── evaluate() - The actual implementation
 ```
+
+---
+
+## Self-Documenting Functions
+
+FormulaQ uses a **self-documenting** approach where all function documentation is embedded directly in the function definition. This single source of truth powers:
+
+- **Editor autocomplete** - Shows description and first example
+- **Function Browser** - Displays all examples and full documentation
+- **Validation messages** - Uses parameter descriptions in error messages
+- **Generated documentation** - Can be extracted for API docs
+
+### The `examples` Field
+
+Every function should include usage examples:
+
+```typescript
+const SQRT: FormulaFunction = {
+  name: 'SQRT',
+  description: 'Returns the square root of a number',
+  // ... other fields ...
+
+  // Required for good user experience
+  examples: [
+    { formula: 'SQRT(16)', description: 'Returns 4' },
+    { formula: 'SQRT(@variance)', description: 'Standard deviation from variance' },
+  ],
+};
+```
+
+### Example Guidelines
+
+| Do | Don't |
+|----|-------|
+| Show realistic use cases | Use trivial examples like `SQRT(1)` |
+| Include variable references `@name` | Only show literals |
+| Explain what the result means | Leave description empty |
+| Show 2-3 diverse examples | Add 10+ examples |
+
+### How Examples Are Used
+
+1. **Autocomplete**: The first example is shown in the dropdown
+2. **Function Browser**: All examples are displayed in the detail panel
+3. **Insert Template**: The first example is used as the insert template
 
 ---
 
@@ -63,6 +110,10 @@ const ABS: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: false,
   category: 'Math',
+  examples: [
+    { formula: 'ABS(-5)', description: 'Returns 5' },
+    { formula: 'ABS(@profit)', description: 'Get absolute value of profit' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const x = args[0];
@@ -112,6 +163,10 @@ const ROUND: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: false,
   category: 'Math',
+  examples: [
+    { formula: 'ROUND(3.14159, 2)', description: 'Returns 3.14' },
+    { formula: 'ROUND(@price)', description: 'Round price to nearest integer' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const value = args[0];
@@ -175,6 +230,10 @@ const MEDIAN: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,  // <-- This is the key flag
   category: 'Aggregation',
+  examples: [
+    { formula: 'MEDIAN(@salary)', description: 'Middle salary value' },
+    { formula: 'MEDIAN(@response_time)', description: 'Typical response time' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     // For aggregation functions, args IS the full array of values
@@ -234,6 +293,10 @@ const PERCENTILE: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,
   category: 'Aggregation',
+  examples: [
+    { formula: 'PERCENTILE(@scores, 90)', description: '90th percentile score' },
+    { formula: 'PERCENTILE(@latency, 95)', description: 'P95 latency' },
+  ],
 
   async evaluate(args: readonly Value[], context): Promise<Value | null> {
     // For PERCENTILE, we need to handle this specially
@@ -292,6 +355,10 @@ const MAX_OF: FormulaFunction = {
   minArgs: 2,            // At least 2 arguments required
   // maxArgs: undefined  // No maximum (omit for unlimited)
   category: 'Math',
+  examples: [
+    { formula: 'MAX_OF(@a, @b)', description: 'Larger of two values' },
+    { formula: 'MAX_OF(@price, @cost, @fee)', description: 'Largest of three' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     let max: number | null = null;
@@ -440,6 +507,10 @@ if (x <= 0) {
     { name: 'start_date', type: 'string.text', description: 'Start date (ISO format)' },
     { name: 'end_date', type: 'string.text', description: 'End date (ISO format)' },
   ],
+  examples: [
+    { formula: 'DAYS_BETWEEN(@start, @end)', description: 'Days in date range' },
+    { formula: 'DAYS_BETWEEN("2024-01-01", @due_date)', description: 'Days since new year' },
+  ],
 }
 
 // Bad
@@ -449,6 +520,7 @@ if (x <= 0) {
   params: [
     { name: 'a', type: 'any', description: 'input' },
   ],
+  // Missing examples!
 }
 ```
 
@@ -489,6 +561,89 @@ export const COMPLEX: FormulaFunction = {
 
 ---
 
+## Maintenance Guidelines
+
+### Keeping Documentation in Sync
+
+Because FormulaQ uses self-documenting functions, documentation stays automatically up-to-date. Here's how to maintain this system:
+
+#### 1. Always Add Examples When Creating Functions
+
+Every new function **must** include the `examples` field:
+
+```typescript
+// ✓ Complete function definition
+const MY_FUNCTION: FormulaFunction = {
+  name: 'MY_FUNCTION',
+  description: 'Clear description of what it does',
+  params: [...],
+  returnType: 'number.float',
+  isAggregation: false,
+  category: 'MyCategory',
+  examples: [  // ← Required for help system
+    { formula: 'MY_FUNCTION(@value)', description: 'What it returns' },
+  ],
+  async evaluate(args) { ... },
+};
+```
+
+#### 2. Update Examples When Behavior Changes
+
+If you modify a function's behavior, update its examples to reflect the new behavior:
+
+```typescript
+// Before: Function only accepted positive numbers
+examples: [
+  { formula: 'SQRT(16)', description: 'Returns 4' },
+],
+
+// After: Function now handles negative numbers with absolute value
+examples: [
+  { formula: 'SQRT(16)', description: 'Returns 4' },
+  { formula: 'SQRT(-16)', description: 'Returns 4 (uses absolute value)' },
+],
+```
+
+#### 3. Use Consistent Example Patterns
+
+Follow these patterns across all functions:
+
+| Pattern | Example |
+|---------|---------|
+| Simple literal | `SQRT(16)` |
+| Single variable | `SQRT(@value)` |
+| Multiple variables | `@price * @quantity` |
+| With constants | `@price * 1.08` |
+| Nested functions | `IF(@value > AVG(@value), "High", "Low")` |
+
+#### 4. Review Checklist for New Functions
+
+Before merging a new function, verify:
+
+- [ ] `description` is clear and concise
+- [ ] All `params` have descriptions
+- [ ] `examples` includes 2-3 realistic use cases
+- [ ] First example is the most common use case
+- [ ] Examples include variable references (`@name`)
+- [ ] Category is set appropriately
+- [ ] ViewModels tests cover edge cases
+
+### Architectural Decisions
+
+When extending FormulaQ, follow these principles:
+
+1. **Single Source of Truth**: All function metadata lives in `FormulaFunction`
+2. **ViewModels Pattern**: Extract pure logic for testability
+3. **Null Propagation**: Return null for invalid inputs, don't throw
+4. **Async Evaluate**: Keep `evaluate()` async even for sync operations
+
+### Related Documentation
+
+- [Architecture](./architecture.md) - System design and principles
+- [Technical Implementation](./technical-implementation.md) - Implementation details
+
+---
+
 ## Type Reference
 
 ### ValueType
@@ -522,6 +677,15 @@ interface ParamDef {
 }
 ```
 
+### FunctionExample
+
+```typescript
+interface FunctionExample {
+  formula: string;      // 'SUM(@sales)'
+  description: string;  // 'Total of all sales'
+}
+```
+
 ### FormulaFunction
 
 ```typescript
@@ -535,6 +699,7 @@ interface FormulaFunction {
   minArgs?: number;
   maxArgs?: number;
   category?: string;
+  examples?: FunctionExample[];  // Usage examples for help system
 
   evaluate(args: readonly Value[], context: EvaluationContext): Promise<Value | null>;
 }
@@ -605,6 +770,10 @@ export const SQRT: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: false,
   category: 'Math',
+  examples: [
+    { formula: 'SQRT(16)', description: 'Returns 4' },
+    { formula: 'SQRT(@variance)', description: 'Standard deviation from variance' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const x = args[0];

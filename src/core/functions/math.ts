@@ -72,6 +72,11 @@ export const LOG_FUNCTION: FormulaFunction = {
   category: 'Math',
   minArgs: 1,
   maxArgs: 1,
+  examples: [
+    { formula: 'LOG(@value)', description: 'Natural log of value' },
+    { formula: 'LOG(@growth + 1)', description: 'Log-transform growth rate' },
+    { formula: 'LOG(@population) / LOG(10)', description: 'Convert to log base 10' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const x = extractNumber(args[0]);
@@ -109,6 +114,11 @@ export const LOG10_FUNCTION: FormulaFunction = {
   category: 'Math',
   minArgs: 1,
   maxArgs: 1,
+  examples: [
+    { formula: 'LOG10(@concentration)', description: 'Log10 of concentration' },
+    { formula: 'LOG10(@value) * 10', description: 'Decibel-like scale' },
+    { formula: '-LOG10(@pH)', description: 'Convert pH to hydrogen ion concentration' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const x = extractNumber(args[0]);
@@ -153,6 +163,11 @@ export const POWER_FUNCTION: FormulaFunction = {
   category: 'Math',
   minArgs: 2,
   maxArgs: 2,
+  examples: [
+    { formula: 'POWER(@base, 2)', description: 'Square of base' },
+    { formula: 'POWER(@value, 0.5)', description: 'Square root of value' },
+    { formula: 'POWER(1 + @rate, @years)', description: 'Compound interest factor' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const base = extractNumber(args[0]);

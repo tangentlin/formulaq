@@ -93,6 +93,11 @@ export const SUM: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,
   category: AGGREGATION_CATEGORY,
+  examples: [
+    { formula: 'SUM(@sales)', description: 'Total of all sales values' },
+    { formula: 'SUM(@quantity) * @unitPrice', description: 'Combined with arithmetic' },
+    { formula: 'SUM(@revenue) - SUM(@costs)', description: 'Calculate profit' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     // For aggregation functions, args contains the full array of values
@@ -130,6 +135,11 @@ export const AVG: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,
   category: AGGREGATION_CATEGORY,
+  examples: [
+    { formula: 'AVG(@score)', description: 'Average of all scores' },
+    { formula: 'AVG(@price) * 1.1', description: 'Average price plus 10%' },
+    { formula: '@value - AVG(@value)', description: 'Deviation from mean' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const numericValues = extractNumericValues(args);
@@ -165,6 +175,11 @@ export const MIN: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,
   category: AGGREGATION_CATEGORY,
+  examples: [
+    { formula: 'MIN(@price)', description: 'Lowest price in the data' },
+    { formula: '@price - MIN(@price)', description: 'Difference from minimum price' },
+    { formula: 'IF(@value = MIN(@value), "Lowest", "")', description: 'Mark minimum values' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const numericValues = extractNumericValues(args);
@@ -200,6 +215,11 @@ export const MAX: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,
   category: AGGREGATION_CATEGORY,
+  examples: [
+    { formula: 'MAX(@score)', description: 'Highest score in the data' },
+    { formula: 'MAX(@price) - @price', description: 'Difference from maximum price' },
+    { formula: '@value / MAX(@value) * 100', description: 'Percentage of maximum' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const numericValues = extractNumericValues(args);
@@ -236,6 +256,11 @@ export const COUNT: FormulaFunction = {
   returnType: 'number.float',
   isAggregation: true,
   category: AGGREGATION_CATEGORY,
+  examples: [
+    { formula: 'COUNT(@responses)', description: 'Number of non-null responses' },
+    { formula: 'SUM(@sales) / COUNT(@sales)', description: 'Manual average calculation' },
+    { formula: 'IF(COUNT(@values) > 0, AVG(@values), 0)', description: 'Safe average' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const rawValues = extractRawValues(args);
@@ -284,6 +309,11 @@ export const PERCENTILE: FormulaFunction = {
   minArgs: 2,
   maxArgs: 2,
   category: AGGREGATION_CATEGORY,
+  examples: [
+    { formula: 'PERCENTILE(@score, 50)', description: 'Median score' },
+    { formula: 'PERCENTILE(@salary, 90)', description: '90th percentile salary' },
+    { formula: '@value - PERCENTILE(@value, 50)', description: 'Deviation from median' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     // PERCENTILE receives: [values_array_as_single_arg, k_value]
