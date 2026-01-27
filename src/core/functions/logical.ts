@@ -51,7 +51,15 @@ export const ifFunction: FormulaFunction = {
   ],
   returnType: 'string.text', // Return type depends on branch values, using string.text as placeholder
   isAggregation: false,
-  category: 'logical',
+  category: 'Logical',
+  examples: [
+    { formula: 'IF(@score > 70, "Pass", "Fail")', description: 'Grade pass/fail' },
+    {
+      formula: 'IF(@quantity > 0, @price * @quantity, 0)',
+      description: 'Calculate total if in stock',
+    },
+    { formula: 'IF(@inStock, "Available", "Out of Stock")', description: 'Stock status' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const condition = args[0] ?? null;
@@ -96,7 +104,12 @@ export const andFunction: FormulaFunction = {
   isAggregation: false,
   isVariadic: true,
   minArgs: 2,
-  category: 'logical',
+  category: 'Logical',
+  examples: [
+    { formula: 'AND(@inStock, @isActive)', description: 'Both conditions must be true' },
+    { formula: 'AND(@price > 0, @quantity > 0)', description: 'Valid order check' },
+    { formula: 'IF(AND(@approved, @paid), "Ship", "Hold")', description: 'Combined with IF' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const result = evaluateAnd(args);
@@ -143,7 +156,12 @@ export const orFunction: FormulaFunction = {
   isAggregation: false,
   isVariadic: true,
   minArgs: 2,
-  category: 'logical',
+  category: 'Logical',
+  examples: [
+    { formula: 'OR(@isAdmin, @isModerator)', description: 'Has elevated permissions' },
+    { formula: 'OR(@discounted, @quantity > 10)', description: 'Eligible for discount' },
+    { formula: 'IF(OR(@error, @warning), "Review", "OK")', description: 'Combined with IF' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const result = evaluateOr(args);
@@ -180,7 +198,12 @@ export const notFunction: FormulaFunction = {
   ],
   returnType: 'boolean.boolean',
   isAggregation: false,
-  category: 'logical',
+  category: 'Logical',
+  examples: [
+    { formula: 'NOT(@isExpired)', description: 'Check if not expired' },
+    { formula: 'IF(NOT(@disabled), "Active", "Inactive")', description: 'Active status' },
+    { formula: 'AND(NOT(@deleted), @published)', description: 'Published and not deleted' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const value = args[0] ?? null;
@@ -219,7 +242,12 @@ export const ifNullFunction: FormulaFunction = {
   ],
   returnType: 'string.text', // Return type depends on input values, using string.text as placeholder
   isAggregation: false,
-  category: 'logical',
+  category: 'Logical',
+  examples: [
+    { formula: 'IFNULL(@discount, 0)', description: 'Default discount to 0' },
+    { formula: 'IFNULL(@name, "Unknown")', description: 'Provide default name' },
+    { formula: '@price * IFNULL(@quantity, 1)', description: 'Calculate with default quantity' },
+  ],
 
   async evaluate(args: readonly Value[]): Promise<Value | null> {
     const value = args[0] ?? null;
