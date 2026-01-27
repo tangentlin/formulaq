@@ -10,6 +10,32 @@ import type { Value, ValueType } from './values.ts';
 import type { EvaluationContext } from './context.ts';
 
 /**
+ * Example usage of a function.
+ *
+ * Used in documentation and the function browser to show
+ * practical examples of how to use a function.
+ *
+ * @example
+ * ```typescript
+ * const example: FunctionExample = {
+ *   formula: 'SUM(@sales)',
+ *   description: 'Total of all sales',
+ * };
+ * ```
+ */
+export interface FunctionExample {
+  /**
+   * The formula string demonstrating the function usage.
+   */
+  readonly formula: string;
+
+  /**
+   * Human-readable description of what this example does.
+   */
+  readonly description: string;
+}
+
+/**
  * Type specification for function parameters.
  *
  * - A single ValueType means the parameter must be that exact type
@@ -153,6 +179,21 @@ export interface FunctionInfo {
    * Examples: 'Aggregation', 'Math', 'Logical', 'String'
    */
   readonly category?: string | undefined;
+
+  /**
+   * Usage examples for documentation and the function browser.
+   *
+   * Each example shows a practical use case with a formula and description.
+   *
+   * @example
+   * ```typescript
+   * examples: [
+   *   { formula: 'SUM(@sales)', description: 'Total of all sales' },
+   *   { formula: 'SUM(@quantity) * @unitPrice', description: 'Combined with arithmetic' },
+   * ]
+   * ```
+   */
+  readonly examples?: readonly FunctionExample[] | undefined;
 }
 
 /**

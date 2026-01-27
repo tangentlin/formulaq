@@ -50,6 +50,11 @@ export const concatFunction: FormulaFunction = {
   isVariadic: true,
   minArgs: 2,
   category: 'String',
+  examples: [
+    { formula: 'CONCAT(@firstName, " ", @lastName)', description: 'Combine first and last name' },
+    { formula: 'CONCAT("$", @price)', description: 'Format price with currency symbol' },
+    { formula: 'CONCAT(@city, ", ", @state, " ", @zip)', description: 'Build full address' },
+  ],
 
   async evaluate(args) {
     const result = concatenateStrings(args);

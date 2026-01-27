@@ -347,6 +347,7 @@ export function FormulaColumnDialog(props: FormulaColumnDialogProps): React.Reac
               onValidation={handleValidation}
               placeholder="Enter formula, e.g., @price * (1 + @tax_rate)"
               height={120}
+              showHelpButton
             />
           </Box>
 

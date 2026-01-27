@@ -220,7 +220,7 @@ describe('IF function', () => {
   it('should have correct metadata', () => {
     expect(ifFunction.name).toBe('IF');
     expect(ifFunction.isAggregation).toBe(false);
-    expect(ifFunction.category).toBe('logical');
+    expect(ifFunction.category).toBe('Logical');
     expect(ifFunction.params).toHaveLength(3);
   });
 
@@ -261,7 +261,7 @@ describe('AND function', () => {
     expect(andFunction.isAggregation).toBe(false);
     expect(andFunction.isVariadic).toBe(true);
     expect(andFunction.minArgs).toBe(2);
-    expect(andFunction.category).toBe('logical');
+    expect(andFunction.category).toBe('Logical');
   });
 
   it('should return true when all values are true', async () => {
@@ -315,7 +315,7 @@ describe('OR function', () => {
     expect(orFunction.isAggregation).toBe(false);
     expect(orFunction.isVariadic).toBe(true);
     expect(orFunction.minArgs).toBe(2);
-    expect(orFunction.category).toBe('logical');
+    expect(orFunction.category).toBe('Logical');
   });
 
   it('should return true when any value is true', async () => {
@@ -367,7 +367,7 @@ describe('NOT function', () => {
   it('should have correct metadata', () => {
     expect(notFunction.name).toBe('NOT');
     expect(notFunction.isAggregation).toBe(false);
-    expect(notFunction.category).toBe('logical');
+    expect(notFunction.category).toBe('Logical');
     expect(notFunction.params).toHaveLength(1);
   });
 
@@ -398,7 +398,7 @@ describe('IFNULL function', () => {
   it('should have correct metadata', () => {
     expect(ifNullFunction.name).toBe('IFNULL');
     expect(ifNullFunction.isAggregation).toBe(false);
-    expect(ifNullFunction.category).toBe('logical');
+    expect(ifNullFunction.category).toBe('Logical');
     expect(ifNullFunction.params).toHaveLength(2);
   });
 
@@ -460,7 +460,7 @@ describe('registerLogicalFunctions', () => {
   it('should register functions with logical category', () => {
     registerLogicalFunctions(registry);
 
-    const logicalFunctions = registry.getByCategory('logical');
+    const logicalFunctions = registry.getByCategory('Logical');
     expect(logicalFunctions).toHaveLength(5);
   });
 

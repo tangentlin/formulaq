@@ -120,4 +120,14 @@ export interface FormulaEditorProps {
    * @defaultValue '100px'
    */
   readonly height?: string | number | undefined;
+
+  /**
+   * Whether to show the help button (fx) that opens the Function Browser.
+   *
+   * When enabled, a small button appears next to the editor that opens
+   * a dialog for browsing and inserting available functions.
+   *
+   * @defaultValue false
+   */
+  readonly showHelpButton?: boolean | undefined;
 }

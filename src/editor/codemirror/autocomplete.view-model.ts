@@ -177,11 +177,25 @@ export function formatFunctionSignature(
 export function createFunctionCompletion(functionInfo: FunctionInfo): FormulaCompletion {
   const signature = formatFunctionSignature(functionInfo.params, functionInfo.isVariadic);
 
-  // Build info string with description and category
-  let infoText = functionInfo.description;
+  // Build info string with category, description, and first example
+  const parts: string[] = [];
+
+  // Add category prefix
   if (functionInfo.category) {
-    infoText = '[' + functionInfo.category + '] ' + infoText;
+    parts.push('[' + functionInfo.category + ']');
   }
+
+  // Add description
+  parts.push(functionInfo.description);
+
+  // Add first example if available
+  if (functionInfo.examples !== undefined && functionInfo.examples.length > 0) {
+    const firstExample = functionInfo.examples[0]!;
+    parts.push('');
+    parts.push('Example: ' + firstExample.formula);
+  }
+
+  const infoText = parts.join(' ');
 
   return {
     label: functionInfo.name,

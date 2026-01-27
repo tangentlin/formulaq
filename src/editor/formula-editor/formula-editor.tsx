@@ -8,7 +8,8 @@
  * @module
  */
 
-import { Box } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { EditorView, keymap, placeholder as placeholderExt } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -20,6 +21,7 @@ import { formulaHighlighting } from '../codemirror/highlighting.ts';
 import { formulaAutocomplete } from '../codemirror/autocomplete.ts';
 import { errorMarkerExtension, updateErrors, clearErrors } from '../codemirror/error-marker.ts';
 import { ValidationStatus } from '../validation-status/validation-status.tsx';
+import { FunctionBrowserDialog } from '../function-browser/function-browser-dialog.tsx';
 
 import { createFunctionRegistry } from '../../core/functions/function-registry.ts';
 import { parse } from '../../core/formula-parser/parser.ts';
@@ -92,12 +94,14 @@ export function FormulaEditor(props: FormulaEditorProps): React.ReactElement {
   // Track validation state
   const [validationResult, setValidationResult] = useState<ValidationResult | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
+  const [functionBrowserOpen, setFunctionBrowserOpen] = useState(false);
 
   // Get props with defaults
   const debounceMs = props.validationDebounceMs ?? DEFAULT_VALIDATION_DEBOUNCE_MS;
   const height = normalizeHeight(props.height ?? DEFAULT_HEIGHT);
   const disabled = props.disabled ?? false;
   const placeholderText = props.placeholder ?? '';
+  const showHelpButton = props.showHelpButton ?? false;
 
   // Create or use the function registry
   const functionRegistry = useMemo(
@@ -352,32 +356,99 @@ export function FormulaEditor(props: FormulaEditorProps): React.ReactElement {
   const errorMessage = getErrorMessage(validationResult);
   const errorPosition = getErrorPosition(validationResult, props.value);
 
+  // Function browser handlers
+  const handleOpenFunctionBrowser = useCallback(function handleOpenFunctionBrowser(): void {
+    setFunctionBrowserOpen(true);
+  }, []);
+
+  const handleCloseFunctionBrowser = useCallback(function handleCloseFunctionBrowser(): void {
+    setFunctionBrowserOpen(false);
+  }, []);
+
+  const handleInsertFunction = useCallback(
+    function handleInsertFunction(template: string): void {
+      const view = viewRef.current;
+      if (view === null) {
+        // If no editor, just append to value
+        props.onChange(props.value + template);
+        return;
+      }
+
+      // Insert at cursor position
+      const selection = view.state.selection.main;
+      view.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: template,
+        },
+        selection: {
+          anchor: selection.from + template.length,
+        },
+      });
+
+      // Focus the editor
+      view.focus();
+    },
+    [props.onChange, props.value],
+  );
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        border: 1,
-        borderColor: disabled ? 'action.disabled' : 'divider',
-        borderRadius: 1,
-        overflow: 'hidden',
-        backgroundColor: disabled ? 'action.disabledBackground' : 'background.paper',
-        opacity: disabled ? 0.7 : 1,
-      }}
-    >
+    <Box sx={{ display: 'flex', gap: 1 }}>
       <Box
-        ref={containerRef}
         sx={{
-          flexGrow: 1,
-          '& .cm-editor': {
-            cursor: disabled ? 'not-allowed' : 'text',
-          },
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          border: 1,
+          borderColor: disabled ? 'action.disabled' : 'divider',
+          borderRadius: 1,
+          overflow: 'hidden',
+          backgroundColor: disabled ? 'action.disabledBackground' : 'background.paper',
+          opacity: disabled ? 0.7 : 1,
         }}
-      />
-      <ValidationStatus
-        status={validationStatus}
-        errorMessage={errorMessage}
-        errorPosition={errorPosition}
+      >
+        <Box
+          ref={containerRef}
+          sx={{
+            flexGrow: 1,
+            '& .cm-editor': {
+              cursor: disabled ? 'not-allowed' : 'text',
+            },
+          }}
+        />
+        <ValidationStatus
+          status={validationStatus}
+          errorMessage={errorMessage}
+          errorPosition={errorPosition}
+        />
+      </Box>
+
+      {showHelpButton && (
+        <Tooltip title="Browse functions">
+          <IconButton
+            onClick={handleOpenFunctionBrowser}
+            disabled={disabled}
+            size="small"
+            sx={{
+              alignSelf: 'flex-start',
+              mt: 0.5,
+              border: 1,
+              borderColor: 'divider',
+              borderRadius: 1,
+            }}
+            aria-label="Open function browser"
+          >
+            <MenuBookOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+
+      <FunctionBrowserDialog
+        open={functionBrowserOpen}
+        onClose={handleCloseFunctionBrowser}
+        functionRegistry={functionRegistry}
+        onInsert={handleInsertFunction}
       />
     </Box>
   );
