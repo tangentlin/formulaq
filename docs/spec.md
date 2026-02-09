@@ -102,9 +102,9 @@ flowchart TD
 
 | Layer | Dependencies | Package |
 |-------|--------------|---------|
-| **FormulaQ Core** | None (pure TypeScript) | `@anthropic/formulaq/core` |
-| **FormulaQ Editor** | React, CodeMirror | `@anthropic/formulaq/editor` |
-| **FormulaQ Integrations** | Core + Editor + target | `@anthropic/formulaq/datagrid`, `@anthropic/formulaq/playground` |
+| **FormulaQ Core** | None (pure TypeScript) | `formulaq/core` |
+| **FormulaQ Editor** | React, CodeMirror | `formulaq/editor` |
+| **FormulaQ Integrations** | Core + Editor + target | `formulaq/datagrid`, `formulaq/playground` |
 
 ---
 
@@ -367,21 +367,19 @@ flowchart TD
             INT[number.integer<br/>whole numbers]
             FLOAT[number.float<br/>decimal numbers]
         end
-        
+
         subgraph "Strings"
             TEXT[string.text<br/>general text]
-            SMILES[string.smiles<br/>molecule notation]
         end
-        
+
         subgraph "Boolean"
             BOOL[boolean.boolean<br/>true / false]
         end
     end
-    
+
     style INT fill:#e3f2fd
     style FLOAT fill:#e3f2fd
     style TEXT fill:#fff3e0
-    style SMILES fill:#e8f5e9
     style BOOL fill:#f3e5f5
 ```
 
@@ -390,22 +388,11 @@ flowchart TD
 | `number.integer` | Whole numbers | `42`, `-7`, `0` |
 | `number.float` | IEEE 754 double-precision float | `3.14`, `-1e10`, `0.5` |
 | `string.text` | UTF-8 text | `"hello"`, `'world'` |
-| `string.smiles` | SMILES string (molecule notation) | `"CCO"`, `"c1ccccc1"` |
 | `boolean.boolean` | True or false | `TRUE`, `FALSE` |
 
 **Nullability:** Each variable/column has a `nullable: boolean` property rather than a separate null type. Null values are represented as `value: null` within the Value interface.
 
-### 3.2 SMILES Type
-
-The `string.smiles` type is a semantic specialization of `string.text`:
-
-- Stored as string internally
-- Duck typing: any `string.text` can be passed to RDKit functions
-- RDKit functions validate at runtime and return `null` for invalid SMILES
-- No explicit casting required
-- Columns can be typed as `string.smiles` for better autocomplete hints
-
-### 3.3 Null Handling
+### 3.2 Null Handling
 
 **Null propagation:** Most operations return `null` if any operand is `null`:
 
@@ -432,6 +419,14 @@ SUM(@col)       → null if all values are null
 MIN(@col)       → null if all values are null
 ```
 
+**Comparison with null operands:** Following SQL three-valued logic, comparison operators return `null` when either operand is `null`:
+
+```
+null == null    → null (not true)
+null != 5       → null
+@x > 0          → null if @x is null
+```
+
 **Empty string is NOT null:** Empty string (`""`) is a valid string value, distinct from `null`.
 
 ```
@@ -440,7 +435,7 @@ MIN(@col)       → null if all values are null
 IFNULL("", "default")  → "" (empty string is not null)
 ```
 
-### 3.4 Type Coercion
+### 3.3 Type Coercion
 
 **Strict typing:** No implicit coercion. Type mismatches produce errors.
 
@@ -460,7 +455,7 @@ IF(TRUE, 1, 0)                    → 1 (boolean to number)
 IF(@num > 0, "positive", "zero")  → string result based on number
 ```
 
-### 3.5 Boolean Semantics
+### 3.4 Boolean Semantics
 
 Booleans are distinct from numbers:
 
@@ -661,11 +656,10 @@ interface EvaluationContext {
 /**
  * Hierarchical type system for values.
  */
-type ValueType = 
+type ValueType =
   | 'number.integer'    // Whole numbers
-  | 'number.float'      // Decimal numbers  
+  | 'number.float'      // Decimal numbers
   | 'string.text'       // General text
-  | 'string.smiles'     // SMILES molecule notation
   | 'boolean.boolean';  // True/false
 
 /**
@@ -756,8 +750,11 @@ interface FormulaQEngine {
    * Evaluate a single row.
    * Returns the result value for the row at context.currentIndex.
    * Returns null for runtime errors (e.g., division by zero).
+   *
+   * Note: The implementation accepts `string | ASTNode | ValidatedAST` for
+   * convenience, automatically parsing and validating as needed.
    */
-  evaluateRow(ast: ValidatedAST, context: EvaluationContext): Value;
+  evaluateRow(ast: ValidatedAST, context: EvaluationContext): Promise<Value>;
   
   /**
    * Evaluate all rows, returning results and any runtime errors.
@@ -1018,13 +1015,13 @@ flowchart TD
             AGG5[COUNT]
             AGG6[PERCENTILE]
         end
-        
+
         subgraph "Row-Level Math (MVP)"
             MATH1[LOG]
             MATH2[LOG10]
             MATH3[POWER]
         end
-        
+
         subgraph "Logical (MVP)"
             LOG1[IF]
             LOG2[AND]
@@ -1032,20 +1029,12 @@ flowchart TD
             LOG4[NOT]
             LOG5[IFNULL]
         end
-        
-        subgraph "Chemistry - RDKit (MVP)"
-            CHEM1[TPSA]
-            CHEM2[LOGP]
-            CHEM3[HBD]
-            CHEM4[HBA]
-            CHEM5[NUM_RINGS]
-        end
-        
+
         subgraph "String (MVP)"
             STR1[CONCAT]
         end
     end
-    
+
     style AGG1 fill:#e3f2fd
     style AGG2 fill:#e3f2fd
     style AGG3 fill:#e3f2fd
@@ -1060,11 +1049,6 @@ flowchart TD
     style LOG3 fill:#f3e5f5
     style LOG4 fill:#f3e5f5
     style LOG5 fill:#f3e5f5
-    style CHEM1 fill:#e8f5e9
-    style CHEM2 fill:#e8f5e9
-    style CHEM3 fill:#e8f5e9
-    style CHEM4 fill:#e8f5e9
-    style CHEM5 fill:#e8f5e9
     style STR1 fill:#fce4ec
 ```
 
@@ -1127,32 +1111,7 @@ AND(@age >= 18, @consent == TRUE)
 IFNULL(@optional_value, 0)
 ```
 
-### 5.4 RDKit Chemistry Functions (MVP)
-
-All RDKit functions accept a SMILES string and return `null` for invalid SMILES.
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `TPSA` | `TPSA(@smiles) → number` | Topological polar surface area (Å²) |
-| `LOGP` | `LOGP(@smiles) → number` | Wildman-Crippen LogP |
-| `HBD` | `HBD(@smiles) → number` | Hydrogen bond donor count |
-| `HBA` | `HBA(@smiles) → number` | Hydrogen bond acceptor count |
-| `NUM_RINGS` | `NUM_RINGS(@smiles) → number` | Number of rings |
-
-**Example:**
-
-```
-IF(TPSA(@molecule) < 140, "good permeability", "poor permeability")
-LOGP(@smiles) - 2.5
-```
-
-**Error handling:** Invalid SMILES returns `null`, not an error. Use `IFNULL()` to provide defaults:
-
-```
-IFNULL(LOGP(@smiles), 0)
-```
-
-### 5.5 String Functions (Low Priority)
+### 5.4 String Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -1160,7 +1119,7 @@ IFNULL(LOGP(@smiles), 0)
 
 **Note:** The `&` operator is equivalent to `CONCAT()`.
 
-### 5.6 Function Registry Interface
+### 5.5 Function Registry Interface
 
 For extensibility, functions are registered via a standard interface:
 
@@ -1168,39 +1127,55 @@ For extensibility, functions are registered via a standard interface:
 interface FormulaFunction {
   /** Unique function name (case-sensitive) */
   name: string;
-  
+
   /** Human-readable description for autocomplete/docs */
   description: string;
-  
+
   /** Parameter definitions for validation and hints */
   params: ParamDef[];
-  
+
   /** Return type */
   returnType: ValueType;
-  
-  /** 
+
+  /**
    * Is this an aggregation function?
    * Aggregations receive entire variable arrays via context.
    * Row-level functions receive evaluated single values.
    */
   isAggregation: boolean;
-  
+
+  /** Category for organizing in autocomplete (e.g., 'Aggregation', 'Math', 'Logical') */
+  category?: string;
+
+  /**
+   * Usage examples for documentation and the function browser.
+   * Each example shows a practical use case with formula and description.
+   */
+  examples?: FunctionExample[];
+
   /**
    * Evaluation function.
    * Always async to support future server-side evaluation.
-   * 
+   *
    * For row-level functions:
    *   - args contains evaluated Values for current row
-   *   
+   *
    * For aggregation functions:
    *   - args contains VariableRef names (strings) for columns to aggregate
    *   - Use context.variables[name] to access full arrays
-   * 
+   *
    * @param args - Evaluated argument values OR variable names for aggregations
    * @param context - Full evaluation context with all variable data
    * @returns Result value or null
    */
   evaluate: (args: Value[], context: EvaluationContext) => Promise<Value | null>;
+}
+
+interface FunctionExample {
+  /** The formula string demonstrating the function usage */
+  formula: string;
+  /** Human-readable description of what this example does */
+  description: string;
 }
 
 interface ParamDef {
@@ -1240,28 +1215,6 @@ for (let i = 0; i < context.rowCount; i++) {
 
 ```typescript
 registerFunction({
-  name: 'LOGP',
-  description: 'Calculate Wildman-Crippen LogP from SMILES',
-  params: [
-    { name: 'smiles', type: 'string.smiles', description: 'SMILES string' }
-  ],
-  returnType: 'number.float',
-  isAggregation: false,
-  evaluate: async ([smiles], context) => {
-    if (smiles.value === null) return { type: 'number.float', value: null };
-    try {
-      const mol = RDKit.get_mol(smiles.value as string);
-      if (!mol) return { type: 'number.float', value: null };
-      const logp = JSON.parse(mol.get_descriptors()).CrippenClogP;
-      mol.delete();
-      return { type: 'number.float', value: logp };
-    } catch {
-      return { type: 'number.float', value: null };
-    }
-  }
-});
-
-registerFunction({
   name: 'AVG',
   description: 'Calculate arithmetic mean of values',
   params: [
@@ -1269,6 +1222,11 @@ registerFunction({
   ],
   returnType: 'number.float',
   isAggregation: true,
+  category: 'Aggregation',
+  examples: [
+    { formula: 'AVG(@score)', description: 'Average of all scores' },
+    { formula: '@value / AVG(@value)', description: 'Normalize values to mean' }
+  ],
   evaluate: async ([varNameValue], context) => {
     const varName = varNameValue.value as string;
     const values = context.variables[varName];
@@ -1292,7 +1250,7 @@ Most expressions evaluate per-row:
 
 ```
 @colA + @colB           → Computed for each row independently
-LOGP(@smiles)           → Computed for each row
+LOG(@value)             → Computed for each row
 IF(@x > 0, @x, 0)       → Computed for each row
 ```
 
@@ -1833,7 +1791,6 @@ Detected during evaluation. **Errors are collected, not thrown.** Evaluation con
 | Error Code | Example | Cell Display | Collected As |
 |------------|---------|--------------|--------------|
 | `DIV_BY_ZERO` | `@a / @b` where `@b` is 0 | `#DIV/0!` | `{ code: 'DIV_BY_ZERO', rowIndex, variableName: 'b' }` |
-| `INVALID_SMILES` | `LOGP(@smiles)` with invalid SMILES | `null` | `{ code: 'INVALID_SMILES', rowIndex, variableName: 'smiles' }` |
 | `DOMAIN_ERROR` | `LOG(-1)` | `null` | `{ code: 'DOMAIN_ERROR', rowIndex, details: { value: -1 } }` |
 | `OVERFLOW` | `POWER(10, 1000)` | `#NUM!` | `{ code: 'OVERFLOW', rowIndex }` |
 
@@ -1906,30 +1863,26 @@ for (const error of result.errors) {
 sequenceDiagram
     participant Main as Main Thread
     participant Worker as Web Worker
-    participant RDKit as RDKit WASM
-    
+
     Main->>Worker: evaluate(AST, data, chunkSize)
     activate Worker
-    
+
     loop For each chunk (10,000 rows)
         Worker->>Worker: Process rows 0-9999
-        
-        opt RDKit function used
-            Worker->>RDKit: LOGP(smiles)
-            RDKit-->>Worker: result
-        end
-        
+
         Worker-->>Main: progress(10000, total)
         Main->>Main: Update progress bar
-        
+
         Worker->>Worker: Process rows 10000-19999
         Worker-->>Main: progress(20000, total)
     end
-    
+
     Worker-->>Main: complete(results)
     deactivate Worker
     Main->>Main: Update grid
 ```
+
+**Note:** The current MVP implementation uses chunked main-thread execution instead of Web Workers. This diagram illustrates the future Web Worker architecture for larger datasets.
 
 #### Cancellation Flow
 
@@ -2492,37 +2445,9 @@ flowchart LR
 
 ## 11. Future Roadmap
 
-### FormulaQ Roadmap Overview
+**Note:** The MVP implementation is complete. The milestones below represent completed work and future phases.
 
-```mermaid
-gantt
-    title FormulaQ Development Roadmap
-    dateFormat  YYYY-MM
-    section MVP - Core
-    Parser & Type System        :done,    m1, 2024-01, 2024-02
-    Evaluator (scalar + batch)  :done,    m2, 2024-02, 2024-03
-    Function Registry           :done,    m3, 2024-02, 2024-03
-    
-    section MVP - Editor
-    Playground Prototype        :         m4, 2024-03, 2024-04
-    Formula Editor Component    :         m5, 2024-04, 2024-05
-    Autocomplete & Highlighting :         m6, 2024-04, 2024-05
-    
-    section MVP - Integration
-    DataGrid Adapter            :         m7, 2024-05, 2024-06
-    Dependency Management       :         m8, 2024-05, 2024-06
-    RDKit Integration           :         m9, 2024-06, 2024-07
-    
-    section Phase 2
-    Enhanced Functions          :         p2a, 2024-07, 2024-08
-    Performance Optimizations   :         p2b, 2024-08, 2024-09
-    
-    section Phase 3
-    Advanced Chemistry          :         p3a, 2024-09, 2024-10
-    DateTime Support            :         p3b, 2024-10, 2024-11
-```
-
-### FormulaQ MVP Milestone Breakdown
+### FormulaQ MVP Milestones (Completed)
 
 ```mermaid
 flowchart LR
@@ -2532,25 +2457,25 @@ flowchart LR
         M1C[Evaluator]
         M1D[Basic Functions]
     end
-    
+
     subgraph "Milestone 2: FormulaQ Playground"
         M2A[Variable Editor]
         M2B[Results Panel]
         M2C[Interactive Testing]
     end
-    
+
     subgraph "Milestone 3: FormulaQ Editor"
         M3A[CodeMirror Integration]
         M3B[Autocomplete]
         M3C[Syntax Highlighting]
     end
-    
+
     subgraph "Milestone 4: FormulaQ DataGrid"
         M4A[Column Adapter]
         M4B[Dependency Manager]
         M4C[Dialog Integration]
     end
-    
+
     M1A --> M1B --> M1C --> M1D
     M1D --> M2A
     M2A --> M2B --> M2C
@@ -2567,7 +2492,7 @@ flowchart LR
 
 | Milestone | Deliverable | Success Criteria |
 |-----------|-------------|------------------|
-| **M1: FormulaQ Core** | `@anthropic/formulaq/core` package | Parse, validate, evaluate formulas; unit tests pass |
+| **M1: FormulaQ Core** | `formulaq/core` package | Parse, validate, evaluate formulas; unit tests pass |
 | **M2: FormulaQ Playground** | Interactive web app | Can define variables, enter formulas, see results |
 | **M3: FormulaQ Editor** | `FormulaEditor` component | Autocomplete, syntax highlighting, error display |
 | **M4: FormulaQ DataGrid** | `useFormulaColumns` hook | Add/edit/delete formula columns in MUI DataGrid |
@@ -2581,18 +2506,28 @@ flowchart LR
 | Conditional aggregations | `SUMIF`, `COUNTIF`, `AVERAGEIF`, `MINIF`, `MAXIF` |
 | String functions | `UPPER`, `LOWER`, `TRIM`, `SUBSTRING`, `LEN`, `LEFT`, `RIGHT`, `FIND` |
 
-### 11.2 Phase 3: Advanced Chemistry
+### 11.2 Phase 3: RDKit Chemistry Functions
 
-| Feature | Description |
-|---------|-------------|
-| `FINGERPRINT(@smiles, type)` | Generate molecular fingerprint |
-| `TANIMOTO(@smiles1, @smiles2)` | Tanimoto similarity |
-| `SUBSTRUCTURE_MATCH(@smiles, @pattern)` | SMARTS pattern matching |
-| `MW` (Molecular Weight) | Basic descriptor |
-| `NUM_HEAVY_ATOMS` | Heavy atom count |
-| `NUM_ROTATABLE_BONDS` | Rotatable bond count |
+RDKit-based chemistry functions for molecular property calculations. These require the RDKit.js WASM library and a `string.smiles` semantic type for SMILES strings.
 
-### 11.3 Phase 4: Date/Time Support
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `TPSA` | `TPSA(@smiles) → number` | Topological polar surface area (Å²) |
+| `LOGP` | `LOGP(@smiles) → number` | Wildman-Crippen LogP |
+| `HBD` | `HBD(@smiles) → number` | Hydrogen bond donor count |
+| `HBA` | `HBA(@smiles) → number` | Hydrogen bond acceptor count |
+| `NUM_RINGS` | `NUM_RINGS(@smiles) → number` | Number of rings |
+| `MW` | `MW(@smiles) → number` | Molecular weight |
+| `FINGERPRINT` | `FINGERPRINT(@smiles, type) → string` | Generate molecular fingerprint |
+| `TANIMOTO` | `TANIMOTO(@smiles1, @smiles2) → number` | Tanimoto similarity |
+| `SUBSTRUCTURE_MATCH` | `SUBSTRUCTURE_MATCH(@smiles, @pattern) → boolean` | SMARTS pattern matching |
+
+**Implementation Notes:**
+- RDKit.js WASM (~8MB) should be lazy-loaded only when chemistry functions are used
+- Invalid SMILES returns `null`, not an error
+- Consider loading RDKit in a Web Worker for large datasets
+
+### 11.4 Phase 5: Date/Time Support
 
 | Feature | Description |
 |---------|-------------|
@@ -2601,7 +2536,7 @@ flowchart LR
 | `DATEDIFF` | Difference between dates |
 | `NOW`, `TODAY` | Current date/time |
 
-### 11.4 Phase 5: Performance Optimizations
+### 11.5 Phase 6: Performance Optimizations
 
 | Feature | Description |
 |---------|-------------|
@@ -2610,7 +2545,7 @@ flowchart LR
 | Parallel evaluation | Multiple workers for large datasets |
 | Server-side evaluation | Offload to backend for 10M+ rows |
 
-### 11.5 Phase 6: Advanced Features
+### 11.6 Phase 7: Advanced Features
 
 | Feature | Description |
 |---------|-------------|
@@ -2676,7 +2611,7 @@ flowchart LR
 | **Batch Mode** | Evaluating a formula across multiple rows of data |
 | **SMILES** | Simplified Molecular Input Line Entry System — string notation for molecules |
 | **Topological Sort** | Ordering of dependency graph for sequential evaluation |
-| **ValueType** | Hierarchical type system: `number.integer`, `number.float`, `string.text`, `string.smiles`, `boolean.boolean` |
+| **ValueType** | Hierarchical type system: `number.integer`, `number.float`, `string.text`, `boolean.boolean` |
 | **VariableProvider** | Interface providing variable metadata for validation and autocomplete |
 | **VariableRef** | AST node type representing a reference to a variable (`@name`) |
 | **WASM** | WebAssembly — binary format for running compiled code in browser |
