@@ -1733,7 +1733,9 @@ The grammar is moderately complex (operators, nested functions, strings). Lezer 
 
 ## Summary
 
-### Total Steps: 45
+### Total Steps: 44 (Steps 2-45)
+
+**Note:** Step 1 (project skeleton) was pre-existing. The implementation covers Steps 2-45, for a total of 44 actionable steps.
 
 ### Phase Breakdown:
 
