@@ -1,19 +1,20 @@
 /**
- * Adapter for converting MUI DataGrid rows to an EvaluationContext.
+ * Adapter for converting DataGrid rows to an EvaluationContext.
  *
  * This adapter enables the FormulaQ engine to evaluate formulas against
  * DataGrid row data, supporting both regular data columns and computed
- * formula columns.
+ * formula columns. It depends only on the structural `GridColumnDefinition`
+ * shape, not on any specific grid library.
  *
  * @module
  */
 
 import type { EvaluationContext } from '../../core/types/context.ts';
 import type { Value } from '../../core/types/values.ts';
-import type { GridColDef } from '@mui/x-data-grid';
 import {
   gridTypeToValueType,
   type FormulaColumnDefinition,
+  type GridColumnDefinition,
 } from './grid-variable-provider.view-model.ts';
 import {
   buildVariablesRecord,
@@ -42,8 +43,11 @@ export interface GridEvaluationContextOptions {
   /**
    * The DataGrid column definitions.
    * Used to determine the type of each column for value conversion.
+   *
+   * Accepts any column shape structurally compatible with `GridColumnDefinition`
+   * (MUI's `GridColDef` satisfies this without a direct dependency).
    */
-  readonly columns: readonly GridColDef[];
+  readonly columns: readonly GridColumnDefinition[];
 
   /**
    * The DataGrid row data.
@@ -66,14 +70,14 @@ export interface GridEvaluationContextOptions {
 }
 
 /**
- * Extracts column information from GridColDef array.
+ * Extracts column information from a GridColumnDefinition array.
  *
  * Filters out action columns and maps each column's type to FormulaQ ValueType.
  *
  * @param columns - The DataGrid column definitions
  * @returns Array of ColumnInfo with field names and types
  */
-function extractColumnsInfo(columns: readonly GridColDef[]): ColumnInfo[] {
+function extractColumnsInfo(columns: readonly GridColumnDefinition[]): ColumnInfo[] {
   const result: ColumnInfo[] = [];
 
   for (const column of columns) {
@@ -114,7 +118,7 @@ function extractColumnsInfo(columns: readonly GridColDef[]): ColumnInfo[] {
  *
  * @example
  * ```typescript
- * const columns: GridColDef[] = [
+ * const columns: GridColumnDefinition[] = [
  *   { field: 'price', type: 'number', headerName: 'Price' },
  *   { field: 'quantity', type: 'number', headerName: 'Quantity' },
  * ];

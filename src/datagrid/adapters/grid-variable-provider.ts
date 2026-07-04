@@ -10,7 +10,6 @@
 
 import type { VariableProvider } from '../../core/types/context.ts';
 import type { ValueType, VariableInfo } from '../../core/types/values.ts';
-import type { GridColDef } from '@mui/x-data-grid';
 import {
   type FormulaColumnDefinition,
   type GridColumnDefinition,
@@ -33,8 +32,11 @@ export interface GridVariableProviderOptions {
   /**
    * The DataGrid column definitions.
    * These are the regular data columns from your grid.
+   *
+   * Accepts any column shape structurally compatible with `GridColumnDefinition`
+   * (MUI's `GridColDef` satisfies this without a direct dependency).
    */
-  readonly columns: readonly GridColDef[];
+  readonly columns: readonly GridColumnDefinition[];
 
   /**
    * Optional formula column definitions.
@@ -46,12 +48,15 @@ export interface GridVariableProviderOptions {
 /**
  * VariableProvider implementation backed by DataGrid columns.
  *
- * This class adapts MUI DataGrid column definitions to the VariableProvider
- * interface required by the FormulaQ validation engine.
+ * This class adapts DataGrid column definitions to the VariableProvider
+ * interface required by the FormulaQ validation engine. It only depends on
+ * the structural `GridColumnDefinition` shape, so any grid's column type
+ * (MUI's `GridColDef`, or another grid's equivalent) works without FormulaQ
+ * needing a direct dependency on that grid library.
  *
  * @example
  * ```typescript
- * const columns: GridColDef[] = [
+ * const columns: GridColumnDefinition[] = [
  *   { field: 'price', type: 'number', headerName: 'Price' },
  *   { field: 'quantity', type: 'number', headerName: 'Quantity' },
  * ];
@@ -177,7 +182,7 @@ export class GridVariableProvider implements VariableProvider {
  * ```
  */
 export function createGridVariableProvider(options: GridVariableProviderOptions): VariableProvider {
-  const gridColumns = options.columns as readonly GridColumnDefinition[];
+  const gridColumns = options.columns;
   const formulaColumns = options.formulaColumns ?? [];
 
   const gridVariables = processGridColumns(gridColumns);
